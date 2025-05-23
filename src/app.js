@@ -4,6 +4,8 @@ dotenv.config();
 import express from 'express';
 import authRoutes from './routes/auth.js';
 import cors from 'cors';
+import { connectDB } from './db.js';
+import { sequelize } from './db.js';
 
 const app = express();
 
@@ -26,3 +28,6 @@ const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
+
+await connectDB();
+await sequelize.sync(); // 테이블 자동 생성(최초 1회)
