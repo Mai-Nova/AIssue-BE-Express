@@ -1,5 +1,6 @@
 import express from 'express';
 import {
+  addRepositoryWithGitHub,
   searchRepository,
   getRepositoryList,
   addRepositoryInTracker,
@@ -8,6 +9,7 @@ import {
 import { authenticate } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
+router.post('/', authenticate, addRepositoryWithGitHub);
 
 // 내 저장소의 저장소중 검색
 router.get('/search', authenticate, searchRepository);

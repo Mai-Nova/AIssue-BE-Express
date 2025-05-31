@@ -1,10 +1,45 @@
 import {
+  addRepositoryInfoToDB,
   searchRepositories,
   getUserRepositories,
   addRepositoryToTracking,
   checkUserTrackingStatus,
   removeRepositoryFromTracking,
-} from '../services/repositoryService.js'; // 경로 수정
+} from '../services/repositoryService.js';
+import {repositoryApi} from '../services/githubApiService.js';
+
+
+async function addRepositoryWithGitHub(req, res) {
+  const userToken =  req.cookies.githubAccessToken
+  const url = req.body
+  if(!url) {
+    return res.status(400).json({
+      success: false,
+      message: 'GitHub 저장소 URL이 필요합니다.',
+    });
+  }
+  const parsedUrl = new URL(url);
+  const isGithubDomain = parsedUrl.hostname === 'github.com' || parsedUrl.origin == 'https://github.com';
+  if(!isGithubDomain) {
+    return res.status(403).json({
+      success: false,
+      message: 'Github 저장소 URL이 아닙니다.'
+    })
+  }
+  const githubFullName = parsedUrl.pathname;
+  const response = await repositoryApi.getRepoLanguages(userToken, githubFullName);
+  if(!response.data) {
+    return res.status(500).json({
+      success: false,
+      message: 'Github 저장소를 저장하는데 실패했습니다.'
+    });
+  }
+  await addRepositoryInfoToDB();
+  return res.status(201).json({
+    success: true,
+    message: '저장소가 성공적으로 추가되었습니다.'
+  })
+};
 
 // 저장소 검색
 async function searchRepository(req, res) {
@@ -134,6 +169,7 @@ async function deleteRepositoryInTracker(req, res) {
 }
 
 export {
+  addRepositoryWithGitHub,
   searchRepository,
   getRepositoryList,
   addRepositoryInTracker,

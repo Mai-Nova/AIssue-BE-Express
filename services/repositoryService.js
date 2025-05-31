@@ -1,5 +1,6 @@
 import repoModel from '../models/Repository.js';
 
+async function addRepositoryInfoToDB()
 
 async function searchRepositories(word) {
   const response = await repoModel.selectRepository(word);
