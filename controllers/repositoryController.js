@@ -7,7 +7,7 @@ import {
   removeRepositoryFromTracking,
 } from '../services/repositoryService.js';
 import {repositoryApi} from '../services/githubApiService.js';
-
+import { URL } from 'url';
 
 async function addRepositoryWithGitHub(req, res) {
   const userToken =  req.cookies.githubAccessToken
@@ -34,11 +34,27 @@ async function addRepositoryWithGitHub(req, res) {
       message: 'Github 저장소를 저장하는데 실패했습니다.'
     });
   }
-  await addRepositoryInfoToDB();
-  return res.status(201).json({
-    success: true,
-    message: '저장소가 성공적으로 추가되었습니다.'
-  })
+
+  try{
+    const result = await addRepositoryInfoToDB();
+    if(result.data.length > 0) {
+      return res.status(201).json({
+        success: true,
+        message: '저장소가 성공적으로 추가되었습니다.'
+      })
+    }else{
+      return res.status(203).json({
+        success: false,
+        message: '저장소 추가에 실패했습니다. 이미 존재하는 저장소일 수 있습니다.'
+      })
+    }
+  }catch(error) {
+    console.error('저장소 추가 중 오류:', error.message);
+    return res.status(500).json({
+      success: false,
+      message: '저장소 추가 중 오류가 발생했습니다.'
+    });
+  }
 };
 
 // 저장소 검색

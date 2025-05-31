@@ -1,7 +1,7 @@
 import repoModel from '../models/Repository.js';
 import { repositoryApi } from './githubApiService.js';
 
-async function addRepositoryInfoToDB(repoInfo) {
+async function addRepositoryInfoToDB() {
     const data = repositoryApi.getGitHubRepository();
     if(!data) {
       throw new Error('저장소 정보를 가져오는데 실패했습니다.');
