@@ -50,8 +50,8 @@ CREATE TABLE `repositories` (
   `full_name` VARCHAR(255) NOT NULL,
   `description` TEXT NULL,
   `html_url` VARCHAR(500) NOT NULL,
-  `programming_language` VARCHAR(100) NULL,
-  `language_percentage` TINYINT UNSIGNED NULL COMMENT '언어별 비율 (0-100)',
+  `programming_language` VARCHAR(100) NULL, --language가 여러개일때 대비해서 따로 테이블 빼야 할 거 같습니다.
+  `language_percentage` TINYINT UNSIGNED NULL COMMENT '언어별 비율 (0-100)', -- 여기도 테이블 빼면 컬럼삭제
   `license_spdx_id` VARCHAR(50) NULL COMMENT '해당 repo의 license 종류',
   `readme_summary_gpt` TEXT NULL,
   `star` BIGINT UNSIGNED NOT NULL DEFAULT 0,

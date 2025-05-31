@@ -1,6 +1,30 @@
 import repoModel from '../models/Repository.js';
+import { repositoryApi } from './githubApiService.js';
 
-async function addRepositoryInfoToDB()
+async function addRepositoryInfoToDB(repoInfo) {
+    const data = repositoryApi.getGitHubRepository();
+    if(!data) {
+      throw new Error('저장소 정보를 가져오는데 실패했습니다.');
+    }
+    const repository = {
+      githubRepoId: data.id,
+      fullName: data.full_name,
+      description: data.description || '',
+      htmlUrl: data.html_url,
+      licenseSpdxId: data.license,
+      star: data.stargazers_count,
+      fork: data.forks_count,
+      prTotalCount: data.open_issues_count, 
+      issueTotalCount: data.open_issues_count,
+      createAt: new Date(data.created_at),
+      updateAt: new Date(data.updated_at),
+    };
+    const response = await repoModel.insertRepository(repository);
+    if(!response.success) {
+      throw new Error('저장소 저장이 실패했습니다.');
+    }  
+    return response;    
+  }
 
 async function searchRepositories(word) {
   const response = await repoModel.selectRepository(word);
@@ -43,6 +67,7 @@ async function removeRepositoryFromTracking(userId, githubRepoId) {
 };
 
 export{
+  addRepositoryInfoToDB,
   searchRepositories,
   getUserRepositories,
   checkUserTrackingStatus,

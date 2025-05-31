@@ -26,6 +26,18 @@ function toCamelCaseRepositories(rows) {
   }));
   return {success: true, data: data};
 }
+async function insertRepository(repoInfo) {
+  try{
+    const result = await pool.query(
+      `INSERT INTO repositories(github_repo_id, full_name, description,  html_url, license_spdx_id, star, fork,  pr_total_count, issue_total_count, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+      [repoInfo.githubRepoId, repoInfo.fullName, repoInfo.description, repoInfo.htmlUrl, repoInfo.licenseSpdxId, repoInfo.star, repoInfo.fork, repoInfo.prTotalCount, repoInfo.issueTotalCount, repoInfo.createAt, repoInfo.updateAt ]
+    ) 
+    return {success: true, data: result}
+  }catch(error) {
+    console.error('저장소 검색 쿼리 오류:', error.message);
+    return { success: false };
+  }
+}
 
 // 저장소 이름으로 검색 (Full-text search)
 async function selectRepository(word) {
@@ -104,6 +116,7 @@ async function deleteTrack(userId, githubRepoId) {
 }
 
 export default {
+  insertRepository,
   selectRepository,
   selectTrackRepositories,
   insertTrack,

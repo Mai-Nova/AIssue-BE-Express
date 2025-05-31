@@ -76,101 +76,97 @@ export const githubApiService = {
     }
   },
 };
-
-
+// 저장소 관련 API 호출
 export const repositoryApi = {
-  async function getGitHubRepository(userToken, githubFullName) {
+  async getGitHubRepository(userToken, githubFullName) {
     const instance = axios.create({
-      baseURL: 'https://api.github.com',
-      headers: {
-        Authorization: userToken
-      }
+      baseURL: GITHUB_API_URL,
+      headers: { Authorization: userToken }
     });
-    // DB랑 비교해서 가져올 정보만 셋팅
-    const data = await instance.get(`/repos${githubFullName}`);
-    const githubRepoUd = data.id;
-    const fullName = data.full_name;
-    const description = data.description;
-    const htmlUrl = data.html_url;
-    const license = data.license;
-    const start = data.stargazers_count;
-    const createdAt = data.created_at;
-    const updatedAt = data.updated_at;
-    const fork = data.forks_count;
-    const issueTotalCount = data.open_issues_count;
-    
+
+    const { data } = await instance.get(`/repos/${githubFullName}`);
+
+    return {
+      githubRepoId: data.id,
+      fullName: data.full_name,
+      description: data.description,
+      htmlUrl: data.html_url,
+      licenseSpdxId: data.license?.spdx_id ?? null,
+      star: data.stargazers_count,
+      fork: data.forks_count,
+      issueTotalCount: data.open_issues_count,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at
+    };
   },
-  async function getGitHubContentReadme(userToken, githubFullName) {
+
+  async getGitHubContentReadme(userToken, githubFullName) {
     try {
       const instance = axios.create({
-        baseURL: 'https://api.github.com',
-        headers: {
-          Authorization: userToken
-        }
+        baseURL: GITHUB_API_URL,
+        headers: { Authorization: userToken }
       });
-      const response = await instance.get(`/repos${githubFullName}/contents/README.md`);
+
+      const response = await instance.get(`/repos/${githubFullName}/contents/README.md`);
       const { encoding, content } = response.data;
-      const decodedContent = await encodeBaseContent(content, encoding);
-      // 여기서 content 파일 가져다가 gpt 로 보내면 됩니다. (DB :readme_summary_gpt)
-      
+
+      const decodedContent = await repositoryApi.encodeBaseContent(content, encoding);
       if (!decodedContent) {
         throw new Error('README 파일이 없습니다.');
       }
+
+      return decodedContent;
     } catch (error) {
       throw new Error(`GitHub README 파일 조회 실패: ${error.response?.status === 404 ? '파일이 존재하지 않습니다.' : error.message}`);
     }
   },
 
-  async function encodeBaseContent(content, encoding) {
-    try{
-      // readme 파일을 utf-8로 인코딩
-      if (encoding === 'base64') {
-        return Buffer.from(content, 'base64').toString('utf8');
-      }
-      throw new Error('지원되지 않는 인코딩 형식입니다.')
-    }catch (error) {
-      throw new Error(`README 파일 인코딩 실패: ${error.message}`);
-    }
-  },
-  async function getGitHubLicenseFile(userToken, githubFullName) {
+  async getGitHubLicenseFile(userToken, githubFullName) {
     try {
       const instance = axios.create({
-        baseURL: 'https://api.github.com',
-        headers: {
-          Authorization: userToken
-        }
+        baseURL: GITHUB_API_URL,
+        headers: { Authorization: userToken }
       });
-      const response = await instance.get(`/repos${githubFullName}/contents/LICENSE`);
+
+      const response = await instance.get(`/repos/${githubFullName}/contents/LICENSE`);
       const { encoding, content } = response.data;
-      const decodedContent = await encodeBaseContent(content, encoding);
-      
+
+      const decodedContent = await repositoryApi.encodeBaseContent(content, encoding);
       if (!decodedContent) {
         throw new Error('LICENSE 파일이 없습니다.');
       }
+
+      return decodedContent;
     } catch (error) {
       throw new Error(`GitHub LICENSE 파일 조회 실패: ${error.response?.status === 404 ? '파일이 존재하지 않습니다.' : error.message}`);
     }
   },
 
-
-  async function getRepoLanguages(userToken, githubFullName) {
+  async getRepoLanguages(userToken, githubFullName) {
     const instance = axios.create({
-      baseURL : `${GITHUB_API_URL}/repos${githubFulName}/languages`
+      baseURL: `${GITHUB_API_URL}/repos/${githubFullName}/languages`,
+      headers: { Authorization: userToken }
     });
-    instance.defaults.headers.common['Authorization']=userToken;
-    const data = await instance.get();
-    
-    const languages = Object.keys(data);
-    const langTotal =  Object.values(data).reduce((acc, cur) => acc + cur, 0);
-    const percentage = {};
-    for (const [lang, value] of Object.entries(data)) {
-      percentage[lang] = +(value / langTotal * 100).toFixed(2);  // 소수점 둘째자리까지
-    }
-    const result = languages.map(lang => ({
-      languageName: lang,
-      languagePercentage: percentage[lang]
-    }))
-    return { success : true, data: result };
-  },
-};
 
+    const { data } = await instance.get();
+
+    const total = Object.values(data).reduce((acc, val) => acc + val, 0);
+    const result = Object.entries(data).map(([lang, val]) => ({
+      languageName: lang,
+      languagePercentage: +(val / total * 100).toFixed(2)
+    }));
+
+    return { success: true, data: result };
+  },
+
+  async encodeBaseContent(content, encoding) {
+    try {
+      if (encoding === 'base64') {
+        return Buffer.from(content, 'base64').toString('utf8');
+      }
+      throw new Error('지원되지 않는 인코딩 형식입니다.');
+    } catch (error) {
+      throw new Error(`파일 인코딩 실패: ${error.message}`);
+    }
+  }
+};
